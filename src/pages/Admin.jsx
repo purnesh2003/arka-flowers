@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
-
-
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 
 export default function Admin() {
   const [inputPassword, setInputPassword] = useState("");
@@ -14,43 +18,47 @@ export default function Admin() {
   const [imageFile, setImageFile] = useState("");
 
   const ADMIN_PASSWORD = "arka123";
- 
+  const productsRef = collection(db, "products");
 
-  // 🔄 Load products from Firestore
   useEffect(() => {
     const fetchProducts = async () => {
       const snapshot = await getDocs(productsRef);
-      const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const list = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       setProducts(list);
     };
     fetchProducts();
   }, []);
 
-  // ➕ Add product
-const productsRef = collection(db, "products");
+  const addProduct = async () => {
+    if (!name || !price || !imageFile) {
+      alert("Fill all fields");
+      return;
+    }
 
-const addProduct = async () => {
-  if (!name || !price || !imageFile) {
-    alert("Fill all fields");
-    return;
-  }
+    await addDoc(productsRef, {
+      name,
+      price: Number(price),
+      image: imageFile,
+      description: "Handmade artificial flower",
+    });
 
-  await addDoc(productsRef, {
-    name,
-    price: Number(price),
-    image: imageFile,
-    description: "Handmade artificial flower",
-  });
+    alert("Product added ✅");
 
-  alert("Product added to database ✅");
+    setName("");
+    setPrice("");
+    setImageFile("");
 
-  setName("");
-  setPrice("");
-  setImageFile("");
-};
+    const snapshot = await getDocs(productsRef);
+    const list = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    setProducts(list);
+  };
 
-
-  // ❌ Delete product
   const deleteProduct = async (id) => {
     await deleteDoc(doc(db, "products", id));
     setProducts(products.filter((p) => p.id !== id));
