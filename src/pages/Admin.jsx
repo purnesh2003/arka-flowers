@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+
+
 
 export default function Admin() {
   const [inputPassword, setInputPassword] = useState("");
@@ -18,7 +14,7 @@ export default function Admin() {
   const [imageFile, setImageFile] = useState("");
 
   const ADMIN_PASSWORD = "arka123";
-  const productsRef = collection(db, "products");
+ 
 
   // 🔄 Load products from Firestore
   useEffect(() => {
@@ -31,24 +27,28 @@ export default function Admin() {
   }, []);
 
   // ➕ Add product
-  const addProduct = async () => {
-    if (!name || !price || !imageFile) return;
+const productsRef = collection(db, "products");
 
-    await addDoc(productsRef, {
-      name,
-      price: Number(price),
-      image: imageFile,
-      description: "Handmade artificial flower",
-    });
+const addProduct = async () => {
+  if (!name || !price || !imageFile) {
+    alert("Fill all fields");
+    return;
+  }
 
-    setName("");
-    setPrice("");
-    setImageFile("");
+  await addDoc(productsRef, {
+    name,
+    price: Number(price),
+    image: imageFile,
+    description: "Handmade artificial flower",
+  });
 
-    const snapshot = await getDocs(productsRef);
-    const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    setProducts(list);
-  };
+  alert("Product added to database ✅");
+
+  setName("");
+  setPrice("");
+  setImageFile("");
+};
+
 
   // ❌ Delete product
   const deleteProduct = async (id) => {
