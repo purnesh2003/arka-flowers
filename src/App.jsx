@@ -1,22 +1,30 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from './components/Navbar';
-import Cart from './pages/Cart';
-import {useEffect } from "react";
+import Navbar from "./components/Navbar";
+import Cart from "./pages/Cart";
 import ProductCard from "./components/ProductCard";
-import Admin from './pages/Admin';
-import Checkout from './pages/Checkout';
+import Admin from "./pages/Admin";
+import Checkout from "./pages/Checkout";
+
+import { db } from "./firebase";
+import { collection, getDocs } from "firebase/firestore";
+
+/* ---------------- HOME ---------------- */
 
 function Home() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    const storedProducts = JSON.parse(localStorage.getItem("products"));
-    if (storedProducts) {
-      setProducts(storedProducts);
-    }
+    const fetchProducts = async () => {
+      const snapshot = await getDocs(collection(db, "products"));
+      const list = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setProducts(list);
+    };
+
+    fetchProducts();
   }, []);
 
   return (
@@ -53,14 +61,22 @@ function Home() {
   );
 }
 
-
+/* ---------------- SHOP ---------------- */
 
 function Shop() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("products"));
-    if (stored) setProducts(stored);
+    const fetchProducts = async () => {
+      const snapshot = await getDocs(collection(db, "products"));
+      const list = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setProducts(list);
+    };
+
+    fetchProducts();
   }, []);
 
   return (
@@ -78,6 +94,7 @@ function Shop() {
   );
 }
 
+/* ---------------- APP ---------------- */
 
 export default function App() {
   return (
@@ -96,5 +113,3 @@ export default function App() {
     </Router>
   );
 }
-
-

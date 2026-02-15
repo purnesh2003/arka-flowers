@@ -1,64 +1,65 @@
 import { useState, useEffect } from "react";
+import { db } from "../firebase";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 
 export default function Admin() {
-  // 🔐 Password state
   const [inputPassword, setInputPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // 🛍 Product state
   const [products, setProducts] = useState([]);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [imageFile, setImageFile] = useState("");
 
   const ADMIN_PASSWORD = "arka123";
+  const productsRef = collection(db, "products");
 
-  // 📦 Load products from localStorage
+  // 🔄 Load products from Firestore
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("products"));
-    if (stored) setProducts(stored);
+    const fetchProducts = async () => {
+      const snapshot = await getDocs(productsRef);
+      const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setProducts(list);
+    };
+    fetchProducts();
   }, []);
 
-  const saveProducts = (newProducts) => {
-    setProducts(newProducts);
-    localStorage.setItem("products", JSON.stringify(newProducts));
-  };
-
   // ➕ Add product
-  const addProduct = () => {
-    if (!name || !price || !imageFile) {
-      alert("Please fill all fields and upload image");
-      return;
-    }
+  const addProduct = async () => {
+    if (!name || !price || !imageFile) return;
 
-    const newProduct = {
-      id: Date.now(),
+    await addDoc(productsRef, {
       name,
       price: Number(price),
       image: imageFile,
       description: "Handmade artificial flower",
-    };
+    });
 
-    saveProducts([...products, newProduct]);
-
-    // Reset form
     setName("");
     setPrice("");
     setImageFile("");
+
+    const snapshot = await getDocs(productsRef);
+    const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    setProducts(list);
   };
 
   // ❌ Delete product
-  const deleteProduct = (id) => {
-    const filtered = products.filter((p) => p.id !== id);
-    saveProducts(filtered);
+  const deleteProduct = async (id) => {
+    await deleteDoc(doc(db, "products", id));
+    setProducts(products.filter((p) => p.id !== id));
   };
 
-  // 🔐 LOGIN SCREEN
   if (!isAuthenticated) {
     return (
       <div className="p-6 text-center max-w-sm mx-auto">
         <h2 className="text-xl font-bold mb-4">Admin Login</h2>
-
         <input
           type="password"
           placeholder="Enter Password"
@@ -66,15 +67,12 @@ export default function Admin() {
           onChange={(e) => setInputPassword(e.target.value)}
           className="border p-2 w-full mb-3"
         />
-
         <button
-          onClick={() => {
-            if (inputPassword === ADMIN_PASSWORD) {
-              setIsAuthenticated(true);
-            } else {
-              alert("Wrong password");
-            }
-          }}
+          onClick={() =>
+            inputPassword === ADMIN_PASSWORD
+              ? setIsAuthenticated(true)
+              : alert("Wrong password")
+          }
           className="bg-pink-600 text-white px-4 py-2 rounded"
         >
           Login
@@ -83,13 +81,11 @@ export default function Admin() {
     );
   }
 
-  // 🎨 ADMIN PANEL
   return (
     <div className="p-6 max-w-xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">Admin Panel</h2>
 
       <div className="space-y-3">
-        {/* Product name */}
         <input
           className="border p-2 w-full"
           placeholder="Product Name"
@@ -97,7 +93,6 @@ export default function Admin() {
           onChange={(e) => setName(e.target.value)}
         />
 
-        {/* Price */}
         <input
           className="border p-2 w-full"
           placeholder="Price"
@@ -105,7 +100,6 @@ export default function Admin() {
           onChange={(e) => setPrice(e.target.value)}
         />
 
-        {/* Image upload */}
         <input
           type="file"
           accept="image/*"
@@ -113,16 +107,11 @@ export default function Admin() {
           onChange={(e) => {
             const file = e.target.files[0];
             const reader = new FileReader();
-
-            reader.onloadend = () => {
-              setImageFile(reader.result);
-            };
-
+            reader.onloadend = () => setImageFile(reader.result);
             if (file) reader.readAsDataURL(file);
           }}
         />
 
-        {/* Add button */}
         <button
           onClick={addProduct}
           className="bg-pink-600 text-white px-4 py-2 rounded"
@@ -131,7 +120,6 @@ export default function Admin() {
         </button>
       </div>
 
-      {/* Product list */}
       <div className="mt-6 space-y-2">
         {products.map((p) => (
           <div
@@ -139,7 +127,6 @@ export default function Admin() {
             className="flex justify-between items-center border p-2"
           >
             <span>{p.name}</span>
-
             <button
               onClick={() => deleteProduct(p.id)}
               className="text-red-500"
